@@ -141,16 +141,4 @@ Pass `-DryRun` to preview every move/delete without changing anything.
 
 **Requires:** an Audiobookshelf server and API key. Set the key via `$env:ABS_API_KEY` — do not hard-code it in the script or command line.
 
-## api.ps1
-
-Minimal smoke test that confirms an Audiobookshelf server is reachable and the API key is valid. Reads the key from `$env:ABS_API_KEY`.
-
-```powershell
-$env:ABS_API_KEY = "your-audiobookshelf-api-key"
-.\api.ps1
-```
-
-## Security note
-
-`api.ps1` and `sortAudioBooks.ps1` previously had real Audiobookshelf API keys hard-coded as defaults. Both now read the key from `$env:ABS_API_KEY` (or the `-ApiKey` parameter) instead. If you have committed keys in your git history, rotate them on the Audiobookshelf server, since they remain readable in past commits.
 
