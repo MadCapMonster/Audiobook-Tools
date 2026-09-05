@@ -79,3 +79,78 @@ The default template includes commented-out examples for common cleanup tasks (r
 
 - Windows PowerShell with `winget` available (used to auto-install Python 3.11 and FFmpeg if missing).
 - An NVIDIA GPU is optional but recommended — the script detects CUDA support automatically and falls back to CPU if unavailable.
+
+---
+
+# Other scripts in this repo
+
+## convert_txt_to_epub.py
+
+Helper used internally by `CreateAudioBook.ps1` / `createAudioBookfromUrl.ps1`. Wraps `pypub3` to turn a single `.txt` file into a single-chapter `.epub`.
+
+```
+python convert_txt_to_epub.py <input.txt> <output.epub>
+```
+
+## createAudioBookfromUrl.ps1 / createAudioBook copy.ps1
+
+Earlier, one-off versions of `CreateAudioBook.ps1` kept for reference. `createAudioBookfromUrl.ps1` hard-codes the "Author's Note" trimming logic instead of using the `handlers\` parser system, and neither supports the generic `-Url` download step. Prefer `CreateAudioBook.ps1` for new conversions.
+
+## Convert-Audiobook.ps1
+
+Batch-converts folders of chaptered MP3s (e.g. an audiobook ripped as one MP3 per chapter) into a single M4B per folder.
+
+1. Recursively scans `-Root` for `*.mp3` files and groups them by containing folder — one output book per folder, at any nesting depth (e.g. `X:\Author\Book\*.mp3`).
+2. Skips a folder if it already contains an `.m4b`.
+3. Builds a `chapters.txt` from the MP3 filenames (in sorted order).
+4. Extracts cover art from the first MP3 with FFmpeg.
+5. Concatenates the MP3s into one AAC-encoded `.m4b` with FFmpeg.
+6. Embeds title, chapters, and cover art with `AtomicParsley`.
+7. Deletes the source MP3s once the M4B is built.
+
+```powershell
+.\Convert-Audiobook.ps1 -Root "X:\Audiobooks"
+```
+
+**Requires:** `ffmpeg` and `AtomicParsley` on `PATH`.
+
+## getFolders.ps1
+
+Read-only report: recursively scans `-Root` and writes a CSV (`-OutCsv`, default `folders-with-mp3.csv`) listing every folder that contains MP3 files along with the MP3 count in that folder. Useful for previewing what `Convert-Audiobook.ps1` would process before running it. Shows a progress bar and a final summary (folder count, total MP3s, elapsed time).
+
+```powershell
+.\getFolders.ps1 -Root "X:\Audiobooks" -OutCsv "report.csv"
+```
+
+## sortAudioBooks.ps1
+
+Automates filing audiobooks dropped into an [Audiobookshelf](https://www.audiobookshelf.org/) "drop" folder into a proper `Author\Series\Title` structure.
+
+1. Removes helper files (`.nfo`, `.jpg`, `.sfv`, `.txt`) from `-DropRoot`.
+2. Triggers an Audiobookshelf library scan and waits for new items to be discovered.
+3. For each discovered item, reads its author/series/title metadata from the ABS API.
+4. Builds the destination path under `-LibraryRoot` and moves the book folder there (comparing file hashes if the destination already exists, so it can safely skip duplicates or replace stale copies).
+5. Removes any empty folders left behind in the drop root and runs a final ABS scan.
+
+```powershell
+$env:ABS_API_KEY = "your-audiobookshelf-api-key"
+.\sortAudioBooks.ps1 -DropRoot "X:\drop" -LibraryRoot "X:\" -ServerUrl "http://192.168.68.158:13378"
+```
+
+Pass `-DryRun` to preview every move/delete without changing anything.
+
+**Requires:** an Audiobookshelf server and API key. Set the key via `$env:ABS_API_KEY` — do not hard-code it in the script or command line.
+
+## api.ps1
+
+Minimal smoke test that confirms an Audiobookshelf server is reachable and the API key is valid. Reads the key from `$env:ABS_API_KEY`.
+
+```powershell
+$env:ABS_API_KEY = "your-audiobookshelf-api-key"
+.\api.ps1
+```
+
+## Security note
+
+`api.ps1` and `sortAudioBooks.ps1` previously had real Audiobookshelf API keys hard-coded as defaults. Both now read the key from `$env:ABS_API_KEY` (or the `-ApiKey` parameter) instead. If you have committed keys in your git history, rotate them on the Audiobookshelf server, since they remain readable in past commits.
+
