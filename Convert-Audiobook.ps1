@@ -1,5 +1,23 @@
+<#
+.SYNOPSIS
+    Merges multi-file MP3 audiobooks into single M4B files with chapters and cover art.
+
+.DESCRIPTION
+    Recursively scans -Root for MP3 files, groups them by their containing folder
+    (one output book per folder), then for each group: builds a chapters.txt from
+    the MP3 filenames, extracts cover art from the first file, concatenates the
+    MP3s into an AAC M4B with FFmpeg, embeds title/chapters/cover with
+    AtomicParsley, and deletes the source MP3s. Folders that already contain an
+    .m4b are skipped.
+
+.PARAMETER Root
+    Folder tree to scan for MP3 files (searched recursively).
+
+.NOTES
+    Requires ffmpeg and AtomicParsley on PATH.
+#>
 param(
-    [string]$Root = "C:\Audiobooks"
+    [string]$Root = "X:\"
 )
 
 function Write-Log($msg) {
