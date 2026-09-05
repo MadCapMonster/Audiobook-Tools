@@ -1,8 +1,38 @@
+<#
+.SYNOPSIS
+    Auto-organises audiobooks dropped into an Audiobookshelf drop folder.
+
+.DESCRIPTION
+    Triggers an Audiobookshelf (ABS) library scan of -DropRoot, reads back each
+    discovered item's metadata (author, series, title), and moves its folder
+    from the drop location into -LibraryRoot\Author\[Series\]Title. Runs a
+    final ABS scan afterwards so the library reflects the new locations, and
+    removes any now-empty folders left behind in the drop root.
+
+.PARAMETER DropRoot
+    Windows path to the drop folder (matches -ServerDropRoot on the ABS server).
+
+.PARAMETER LibraryRoot
+    Windows path where organised Author\Series\Title folders are created.
+
+.PARAMETER ServerDropRoot
+    Linux path ABS uses for the same drop folder (for path translation).
+
+.PARAMETER ServerUrl
+    Base URL of the Audiobookshelf server.
+
+.PARAMETER ApiKey
+    Audiobookshelf API key. Falls back to $env:ABS_API_KEY if not supplied.
+    Never hard-code a real key here.
+
+.PARAMETER DryRun
+    Show what would happen (moves, deletes) without changing anything.
+#>
 param(
     [string]$DropRoot       = "X:\drop",
     [string]$LibraryRoot    = "X:\",
     [string]$ServerDropRoot = "/media/Audiobooks/drop",
-    [string]$ServerUrl      = "http://0.0.0.0:13378",
+    [string]$ServerUrl      = "http://:13378",
     [string]$ApiKey = "",
     [switch]$DryRun
 )
@@ -45,7 +75,7 @@ param(
 # Configuration
 # ============================================================
 
-$LibraryId = "937c8895-8537-4dec-aa4d-2761ecf31506"
+$LibraryId = ""
 
 # Maximum time to wait for an ABS scan to complete
 $ScanTimeoutSeconds = 120
